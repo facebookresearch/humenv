@@ -10,7 +10,7 @@
 
 # Overview
 
-HumEnv is an environement based on SMPL humanoid which aims for reproducible studies of humanoid control. It is designed to facilitate algorithmic research on reinforcement learning (RL), goal-based RL, unsupervised RL, and imitation learning. It consists of a basic environment interface, as well as an optional benchmark to evaluate agents on different tasks.
+HumEnv is an environment based on SMPL humanoid which aims for reproducible studies of humanoid control. It is designed to facilitate algorithmic research on reinforcement learning (RL), goal-based RL, unsupervised RL, and imitation learning. It consists of a basic environment interface, as well as an optional benchmark to evaluate agents on different tasks.
 
 ## Features
 
