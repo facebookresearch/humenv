@@ -65,7 +65,7 @@ More examples are available in the [tutorial](tutorial.ipynb).
 
 # Acknowledgments
 
- * [SMPL](https://smpl.is.tue.mpg.de/) and [AMASS](https://amass.is.tue.mpg.de/) for the humanoid sekeleton and motions used to initialise realistic positions for the tracking benchmark
+ * [SMPL](https://smpl.is.tue.mpg.de/) and [AMASS](https://amass.is.tue.mpg.de/) for the humanoid skeleton and motions used to initialise realistic positions for the tracking benchmark
  * [PHC](https://github.com/ZhengyiLuo/PHC) for the data process and calculation of some Goal-reaching metrics
  * [SMPLSm](https://github.com/ZhengyiLuo/SMPLSim) for scripts used to process SMPL and AMASS datasets, and for humanoid processing utils
  * [smplx](https://github.com/vchoutas/smplx.git) for removing chumpy dependency
