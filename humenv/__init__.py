@@ -141,4 +141,4 @@ STANDARD_TASKS = (
 
 ALL_TASKS = STANDARD_TASKS + MOVE_AND_RAISE_HANDS_TASKS
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
