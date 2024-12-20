@@ -15,6 +15,13 @@ from humenv.bench.utils.metrics import distance_proximity, emd, phc_metrics
 from humenv.bench.gym_utils.episodes import Episode
 from humenv import make_humenv, CustomManager
 from concurrent.futures import ThreadPoolExecutor
+from packaging.version import Version
+from tqdm import tqdm
+
+if Version("0.26") <= Version(gymnasium.__version__) < Version("1.0"):
+    cast_obs_wrapper = lambda env: gymnasium.wrappers.TransformObservation(env, lambda obs: obs.astype(np.float32))
+else:
+    cast_obs_wrapper = lambda env: gymnasium.wrappers.TransformObservation(env, lambda obs: obs.astype(np.float32), env.observation_space)
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -24,7 +31,7 @@ class TrackingEvaluation:
     # environment parameters
     num_envs: int = 1
     wrappers: Sequence[Callable[[gymnasium.Env], gymnasium.Wrapper]] = dataclasses.field(
-        default_factory=lambda: [gymnasium.wrappers.FlattenObservation]
+        default_factory=lambda: [gymnasium.wrappers.FlattenObservation, cast_obs_wrapper]
     )
     env_kwargs: dict = dataclasses.field(default_factory=dict)
 
@@ -51,18 +58,19 @@ class TrackingEvaluation:
             motion_buffer=self.motion_buffer,
         )
         if num_workers == 1:
-            results = f(motions_per_worker[0])
+            results = f((motions_per_worker[0], 0))
         else:
-            with ThreadPoolExecutor(max_workers=5) as pool:
-                list_res = pool.map(f, motions_per_worker)
+            with ThreadPoolExecutor(max_workers=num_workers) as pool:
+                inputs = [(x, y) for x, y in zip(motions_per_worker, range(len(motions_per_worker)))]
+                list_res = pool.map(f, inputs)
                 results = []
                 for el in list_res:
                     results.extend(el)
         # Compute metrics
         for ep in results:
             metr = {}
-            next_obs = torch.tensor(ep["observation"][1:])
-            tracking_target = torch.tensor(ep["tracking_target"])
+            next_obs = torch.tensor(ep["observation"][1:], dtype=torch.float32)
+            tracking_target = torch.tensor(ep["tracking_target"], dtype=torch.float32)
             dist_prox_res = distance_proximity(next_obs=next_obs, tracking_target=tracking_target)
             metr.update(dist_prox_res)
             emd_res = emd(next_obs=next_obs, tracking_target=tracking_target)
@@ -72,6 +80,7 @@ class TrackingEvaluation:
             for k, v in metr.items():
                 if isinstance(v, torch.Tensor):
                     metr[k] = v.tolist()
+            metr["motion_id"] = ep["motion_id"]
             metrics[ep["motion_file"]] = metr
         return metrics
 
@@ -80,10 +89,11 @@ class TrackingEvaluation:
             self.mp_manager.shutdown()
 
 
-def _async_tracking_worker(motion_ids: np.ndarray, env_fn, agent: Any, motion_buffer: MotionBuffer):
+def _async_tracking_worker(inputs, env_fn, agent: Any, motion_buffer: MotionBuffer):
+    motion_ids, pos = inputs
     env = env_fn()[0]
     episodes = []
-    for m_id in motion_ids:
+    for m_id in tqdm(motion_ids, position=pos, leave=False):
         ep_ = motion_buffer.get(m_id)
         # we ignore the first state since we need to pass the next observation
         tracking_target = ep_["observation"][1:]

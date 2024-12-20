@@ -45,13 +45,15 @@ class RewardEvaluation:
             else:
                 penv.call("set_task", task)
 
-        pbar = tqdm.tqdm(self.tasks)
+        pbar = tqdm.tqdm(self.tasks, leave=False)
         for task in pbar:
             pbar.set_description(f"task {task}")
             reset_task(task)
             local_stats = []
             for _ in range(self.num_contexts):
+                pbar.set_description(f"task {task} (inference)")
                 ctx = agent.reward_inference(task=task)
+                pbar.set_description(f"task {task} (rollout)")
                 ctx = [None] * self.num_envs if ctx is None else ctx.repeat(self.num_envs, 1)
                 st, _ = rollout(
                     penv,
