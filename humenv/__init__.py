@@ -3,7 +3,6 @@
 # This source code is licensed under the CC BY-NC 4.0 license found in the
 # LICENSE file in the root directory of this source tree.
 
-from gymnasium.envs.registration import register
 from humenv.misc.motionlib import MotionBuffer
 from multiprocessing.managers import BaseManager
 from gymnasium.vector import AsyncVectorEnv, SyncVectorEnv
@@ -13,12 +12,6 @@ import gymnasium
 import random
 
 DEFAULT_MAX_EPISODE_STEPS = 300
-
-register(
-    id="humenv/HumEnv-v0.0.1",
-    entry_point="humenv.env:HumEnv",
-    max_episode_steps=DEFAULT_MAX_EPISODE_STEPS,
-)
 
 
 class CustomManager(BaseManager):
@@ -34,18 +27,16 @@ def make_humenv(
     motions: str | List[str] | None = None,
     motion_base_path: str | None = None,
     wrappers: Sequence[Callable[[gymnasium.Env], gymnasium.Wrapper]] | None = None,
+    max_episode_steps: int = DEFAULT_MAX_EPISODE_STEPS,
     **kwargs,
 ):
     def create_single_env(motion_buffer, **kwargs) -> gymnasium.Env:
         def trunk():
-            import humenv
-            from humenv.env import HumEnv
-
-            env = gymnasium.make(
-                id="humenv/HumEnv-v0.0.1",
+            env = HumEnv(
                 motion_buffer=motion_buffer,
                 **kwargs,
             )
+            env = gymnasium.wrappers.TimeLimit(env, max_episode_steps=max_episode_steps)
             if wrappers is None:
                 return env
 
@@ -142,4 +133,4 @@ STANDARD_TASKS = (
 
 ALL_TASKS = STANDARD_TASKS + MOVE_AND_RAISE_HANDS_TASKS
 
-__version__ = "0.1.2"
+__version__ = "0.2.0"
