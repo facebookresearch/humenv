@@ -82,9 +82,16 @@ class HumEnv(gym.Env):
                 for k, v in obs.items()
             }
         )
+        # Get the actuator range from mujoco
+        low, high = [], []
+        for i in range(self.model.nu):
+            assert bool(self.model.actuator(i).ctrllimited)
+            low.append(self.model.actuator(i).ctrlrange[0])
+            high.append(self.model.actuator(i).ctrlrange[1])
         self.action_space = gym.spaces.Box(
-            low=-np.ones(self.model.nu),
-            high=np.ones(self.model.nu),
+            low=np.array(low),
+            high=np.array(high),
+            shape=(self.model.nu,),
             dtype=np.float64,
         )
         self.state_init = StateInit[self.state_init]
