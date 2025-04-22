@@ -62,6 +62,10 @@ class HumEnv(gym.Env):
         self.set_task(task)
         simulation_dt = 1.0 / 450.0
         self.action_repeat = 15
+        if self.spec is None:
+            from gymnasium.envs.registration import EnvSpec
+
+            self.spec = EnvSpec("humenv")
         module_path = Path(humenv.__file__).resolve().parent
         if Path(self.xml).exists():
             self.model = mujoco.MjModel.from_xml_path(self.xml)
