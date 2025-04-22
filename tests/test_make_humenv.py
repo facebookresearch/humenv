@@ -11,7 +11,7 @@ import typing as tp
 from humenv import make_humenv
 
 
-@pytest.mark.parametrize("num_envs", [2, 5])
+@pytest.mark.parametrize("num_envs", [1, 2, 5])
 @pytest.mark.parametrize("vectorization_mode", ["sync", "async"])
 @pytest.mark.parametrize("seed", [None, 1])
 @pytest.mark.parametrize("state_init", ["Default", "Fall"])
@@ -34,13 +34,15 @@ def test_make_humenv(
     for k in range(reset_no):
         observations, infos = penv.reset(seed=seed)
         for j in range(step_no):
-            for i in range(len(observations) - 1):
-                if state_init == "Default":
-                    np.testing.assert_allclose(observations[i], observations[i + 1])
-                else:
-                    assert not np.allclose(observations[i], observations[i + 1])
+            if num_envs > 1:
+                for i in range(len(observations) - 1):
+                    if state_init == "Default":
+                        np.testing.assert_allclose(observations[i], observations[i + 1])
+                    else:
+                        assert not np.allclose(observations[i], observations[i + 1])
             actions = penv.action_space.sample()
-            # always use the same action:
-            actions = np.repeat(actions[0][np.newaxis, :], num_envs, axis=0)
+            if num_envs > 1:
+                # always use the same action:
+                actions = np.repeat(actions[0][np.newaxis, :], num_envs, axis=0)
             observations, rewards, terminations, truncations, infos = penv.step(actions)
     penv.close()
