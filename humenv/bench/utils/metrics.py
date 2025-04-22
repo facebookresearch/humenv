@@ -70,7 +70,9 @@ def get_pose(obs: torch.Tensor):
 def distance_matrix(X: torch.Tensor, Y: torch.Tensor):
     X_norm = X.pow(2).sum(1).reshape(-1, 1)
     Y_norm = Y.pow(2).sum(1).reshape(1, -1)
-    return torch.sqrt(X_norm + Y_norm - 2 * torch.matmul(X, Y.T))
+    val = X_norm + Y_norm - 2 * torch.matmul(X, Y.T)
+    # clamp is needed to avoid negative values due to numerical errors
+    return torch.sqrt(torch.clamp(val, min=0))
 
 
 def emd(next_obs: torch.Tensor, tracking_target: torch.Tensor, device: str = "cpu"):
@@ -83,6 +85,7 @@ def emd(next_obs: torch.Tensor, tracking_target: torch.Tensor, device: str = "cp
     Y_pot = torch.ones(tracked_obs.shape[0], device=agent_obs.device) / tracked_obs.shape[0]
     transport_cost = ot.emd2(X_pot, Y_pot, cost_matrix, numItermax=100000)
     return {"emd": transport_cost.item()}
+
 
 def emd_numpy(next_obs: torch.Tensor, tracking_target: torch.Tensor):
     # keep only pose part of the observations
